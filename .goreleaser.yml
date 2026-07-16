@@ -1,0 +1,43 @@
+version: 2
+
+before:
+  hooks:
+    - go test ./...
+
+builds:
+  - id: figma-cli
+    main: ./cmd/figma-cli
+    binary: figma-cli
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+
+archives:
+  - id: figma-cli
+    ids:
+      - figma-cli
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: "figma-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - README.zh-CN.md
+      - LICENSE
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  replace_existing_artifacts: true

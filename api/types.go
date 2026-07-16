@@ -8,11 +8,13 @@ type Me struct {
 }
 
 type File struct {
-	Name         string `json:"name"`
-	LastModified string `json:"lastModified"`
-	ThumbnailURL string `json:"thumbnailUrl"`
-	Version      string `json:"version"`
-	Document     Node   `json:"document"`
+	Name         string               `json:"name"`
+	LastModified string               `json:"lastModified"`
+	ThumbnailURL string               `json:"thumbnailUrl"`
+	Version      string               `json:"version"`
+	Document     Node                 `json:"document"`
+	Components   map[string]Component `json:"components,omitempty"`
+	Styles       map[string]Style     `json:"styles,omitempty"`
 }
 
 type Node struct {
@@ -78,4 +80,59 @@ type User struct {
 	ID     string `json:"id"`
 	Handle string `json:"handle"`
 	ImgURL string `json:"img_url"`
+}
+
+type Component struct {
+	Key            string `json:"key"`
+	Name           string `json:"name"`
+	Description    string `json:"description"`
+	Remote         bool   `json:"remote"`
+	ComponentSetID string `json:"componentSetId"`
+}
+
+type Style struct {
+	Key         string `json:"key"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Remote      bool   `json:"remote"`
+	StyleType   string `json:"styleType"`
+}
+
+type VariablesResponse struct {
+	Status int           `json:"status"`
+	Error  bool          `json:"error"`
+	Meta   VariablesMeta `json:"meta"`
+}
+
+type VariablesMeta struct {
+	Variables           map[string]Variable           `json:"variables"`
+	VariableCollections map[string]VariableCollection `json:"variableCollections"`
+}
+
+type Variable struct {
+	ID                   string         `json:"id"`
+	Name                 string         `json:"name"`
+	Key                  string         `json:"key"`
+	VariableCollectionID string         `json:"variableCollectionId"`
+	ResolvedType         string         `json:"resolvedType"`
+	ValuesByMode         map[string]any `json:"valuesByMode"`
+	Scopes               []string       `json:"scopes"`
+	Remote               bool           `json:"remote"`
+	Description          string         `json:"description"`
+	HiddenFromPublishing bool           `json:"hiddenFromPublishing"`
+}
+
+type VariableCollection struct {
+	ID                   string         `json:"id"`
+	Name                 string         `json:"name"`
+	Key                  string         `json:"key"`
+	Modes                []VariableMode `json:"modes"`
+	DefaultModeID        string         `json:"defaultModeId"`
+	Remote               bool           `json:"remote"`
+	HiddenFromPublishing bool           `json:"hiddenFromPublishing"`
+}
+
+type VariableMode struct {
+	ModeID string `json:"modeId"`
+	Name   string `json:"name"`
 }

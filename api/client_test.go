@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	"github.com/wohsj110/figma_cli/internal/cache"
 )
 
 func TestMeSendsFigmaTokenHeader(t *testing.T) {
@@ -65,5 +68,47 @@ func TestAPIErrorIncludesStatus(t *testing.T) {
 	_, _, err := client.Me(context.Background())
 	if err == nil {
 		t.Fatal("expected error")
+	}
+}
+
+func TestVariablesEndpoint(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/files/abc/variables/local" {
+			t.Fatalf("path = %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"meta":{"variables":{"v1":{"id":"v1","name":"Color/Primary","resolvedType":"COLOR","variableCollectionId":"c1"}},"variableCollections":{"c1":{"id":"c1","name":"Colors"}}}}`))
+	}))
+	defer server.Close()
+
+	client := New("tok")
+	client.BaseURL = server.URL
+	resp, _, err := client.Variables(context.Background(), "abc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.Meta.Variables["v1"].Name != "Color/Primary" {
+		t.Fatalf("variables not decoded: %#v", resp.Meta.Variables)
+	}
+}
+
+func TestClientCacheAvoidsSecondRequest(t *testing.T) {
+	var hits int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		_, _ = w.Write([]byte(`{"id":"u1","email":"u@example.com","handle":"User"}`))
+	}))
+	defer server.Close()
+
+	client := New("tok")
+	client.BaseURL = server.URL
+	client.Cache = cache.Store{Dir: t.TempDir(), TTL: time.Hour}
+	if _, _, err := client.Me(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := client.Me(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if hits != 1 {
+		t.Fatalf("hits = %d, want 1", hits)
 	}
 }

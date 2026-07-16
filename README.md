@@ -11,9 +11,13 @@ It is designed for repeatable inspection and asset export:
 - Read file and node summaries without opening the Figma app.
 - Export node image URLs or download assets locally.
 - List comments for review context.
+- List local components, styles, and variables.
+- Cache repeated reads locally with a bounded TTL.
 - Store the Figma token in the OS keyring; `FIGMA_TOKEN` is supported for CI and one-off runs.
 
 This CLI complements Figma MCP workflows. Use MCP or browser automation for interactive canvas context and write-back workflows. Use this CLI when an agent needs stable, token-based reads and reproducible outputs.
+
+See [docs/CAPABILITY_REVIEW.md](docs/CAPABILITY_REVIEW.md) for the official API boundary, lessons from existing tooling, and non-goals.
 
 ## Install
 
@@ -92,10 +96,25 @@ List comments:
 figma-cli comments list FILE_KEY
 ```
 
+List reusable design metadata:
+
+```bash
+figma-cli components list FILE_KEY
+figma-cli styles list FILE_KEY
+figma-cli variables list FILE_KEY
+```
+
 Use raw JSON when an agent needs the original API response:
 
 ```bash
 figma-cli node inspect FILE_KEY --node 1:2 --raw
+```
+
+Local cache controls:
+
+```bash
+figma-cli file get FILE_KEY --cache-ttl 1h
+figma-cli file get FILE_KEY --no-cache
 ```
 
 ## Output Contract
@@ -103,15 +122,29 @@ figma-cli node inspect FILE_KEY --node 1:2 --raw
 - Default output is concise text for humans and agents.
 - `--raw` prints formatted JSON from the Figma REST API.
 - `--verbose` prints request diagnostics without token values.
+- GET JSON responses are cached for 15 minutes by default.
+- `--no-cache` disables the cache for one invocation.
+- `--cache-ttl` accepts Go duration strings such as `30s`, `15m`, or `1h`.
 - `FIGMA_API_BASE_URL` can override the API host for local testing.
 - Large file payloads should be requested deliberately with `--depth` or `--raw`.
 
+## Release Readiness
+
+The repository includes GoReleaser configuration for GitHub release archives. Homebrew publishing is documented but intentionally not enabled until the final repository and tap names are confirmed.
+
+```bash
+go test ./...
+make build
+make mock-verify
+make release-check
+```
+
+See [docs/RELEASING.md](docs/RELEASING.md).
+
 ## Roadmap
 
-- Components, styles, and variables inspection.
 - Design token export to CSS / JSON.
-- Local response cache keyed by file key, node ID, and version.
-- GoReleaser and Homebrew packaging.
+- Homebrew cask publishing after repository/tap names are confirmed.
 - Optional skills for Codex and Claude Code.
 
 ## Development
@@ -119,4 +152,5 @@ figma-cli node inspect FILE_KEY --node 1:2 --raw
 ```bash
 make test
 make build
+make mock-verify
 ```

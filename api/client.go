@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/wohsj110/figma_cli/internal/cache"
 )
 
 const DefaultBaseURL = "https://api.figma.com/v1"
@@ -21,6 +23,7 @@ type Client struct {
 	HTTPClient *http.Client
 	Verbose    bool
 	VerboseOut io.Writer
+	Cache      cache.Store
 }
 
 func New(token string) *Client {
@@ -81,6 +84,13 @@ func (c *Client) Comments(ctx context.Context, key string) (*CommentsResponse, [
 	return &out, raw, err
 }
 
+func (c *Client) Variables(ctx context.Context, key string) (*VariablesResponse, []byte, error) {
+	path := "/files/" + url.PathEscape(key) + "/variables/local"
+	var out VariablesResponse
+	raw, err := c.getJSON(ctx, path, &out)
+	return &out, raw, err
+}
+
 func (c *Client) Download(ctx context.Context, rawURL, outPath string) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
@@ -110,6 +120,21 @@ func (c *Client) getJSON(ctx context.Context, path string, out any) ([]byte, err
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL+path, nil)
 	if err != nil {
 		return nil, err
+	}
+	if body, ok, err := c.Cache.Get(req.URL.String()); err != nil {
+		return nil, fmt.Errorf("read cache: %w", err)
+	} else if ok {
+		if c.Verbose {
+			w := c.VerboseOut
+			if w == nil {
+				w = os.Stderr
+			}
+			fmt.Fprintf(w, "cache hit %s\n", req.URL.String())
+		}
+		if err := json.Unmarshal(body, out); err != nil {
+			return nil, err
+		}
+		return body, nil
 	}
 	req.Header.Set("X-Figma-Token", c.Token)
 	req.Header.Set("Accept", "application/json")
@@ -141,6 +166,9 @@ func (c *Client) getJSON(ctx context.Context, path string, out any) ([]byte, err
 	}
 	if err := json.Unmarshal(body, out); err != nil {
 		return nil, err
+	}
+	if err := c.Cache.Put(req.URL.String(), body); err != nil {
+		return nil, fmt.Errorf("write cache: %w", err)
 	}
 	return body, nil
 }

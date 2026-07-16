@@ -9,22 +9,27 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/wohsj110/figma_cli/api"
+	"github.com/wohsj110/figma_cli/internal/cache"
 	"github.com/wohsj110/figma_cli/internal/credential"
 	"github.com/wohsj110/figma_cli/internal/figmaurl"
 )
 
 type app struct {
-	stdin   io.Reader
-	stdout  io.Writer
-	stderr  io.Writer
-	verbose bool
+	stdin    io.Reader
+	stdout   io.Writer
+	stderr   io.Writer
+	verbose  bool
+	noCache  bool
+	cacheTTL time.Duration
 }
 
 func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) error {
-	a := &app{stdin: stdin, stdout: stdout, stderr: stderr}
+	a := &app{stdin: stdin, stdout: stdout, stderr: stderr, cacheTTL: 15 * time.Minute}
 	return a.run(ctx, args)
 }
 
@@ -55,6 +60,12 @@ func (a *app) run(ctx context.Context, args []string) error {
 		return a.runImage(ctx, args[1:])
 	case "comments":
 		return a.runComments(ctx, args[1:])
+	case "components":
+		return a.runComponents(ctx, args[1:])
+	case "styles":
+		return a.runStyles(ctx, args[1:])
+	case "variables":
+		return a.runVariables(ctx, args[1:])
 	default:
 		return fmt.Errorf("unknown command %q", args[0])
 	}
@@ -62,15 +73,218 @@ func (a *app) run(ctx context.Context, args []string) error {
 
 func (a *app) parseGlobal(args []string) []string {
 	out := make([]string, 0, len(args))
-	for _, arg := range args {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
 		switch arg {
 		case "--verbose", "-v":
 			a.verbose = true
+		case "--no-cache":
+			a.noCache = true
+		case "--cache-ttl":
+			if i+1 >= len(args) {
+				out = append(out, arg)
+				continue
+			}
+			i++
+			if ttl, err := time.ParseDuration(args[i]); err == nil {
+				a.cacheTTL = ttl
+			} else {
+				out = append(out, arg, args[i])
+			}
 		default:
+			if strings.HasPrefix(arg, "--cache-ttl=") {
+				raw := strings.TrimPrefix(arg, "--cache-ttl=")
+				if ttl, err := time.ParseDuration(raw); err == nil {
+					a.cacheTTL = ttl
+					continue
+				}
+			}
 			out = append(out, arg)
 		}
 	}
 	return out
+}
+
+func (a *app) runComponents(ctx context.Context, args []string) error {
+	if len(args) == 0 {
+		return errors.New("components command required: list")
+	}
+	switch args[0] {
+	case "list":
+		return a.runComponentsList(ctx, args[1:])
+	default:
+		return fmt.Errorf("unknown components command %q", args[0])
+	}
+}
+
+func (a *app) runComponentsList(ctx context.Context, args []string) error {
+	fs := flag.NewFlagSet("components list", flag.ContinueOnError)
+	fs.SetOutput(a.stderr)
+	raw := fs.Bool("raw", false, "print raw JSON")
+	if err := fs.Parse(interspersed(args, nil)); err != nil {
+		return err
+	}
+	if fs.NArg() != 1 {
+		return errors.New("usage: figma-cli components list URL_OR_KEY [--raw]")
+	}
+	target, err := figmaurl.Parse(fs.Arg(0))
+	if err != nil {
+		return err
+	}
+	client, err := a.client()
+	if err != nil {
+		return err
+	}
+	file, body, err := client.File(ctx, target.FileKey, 1)
+	if err != nil {
+		return err
+	}
+	if *raw {
+		return writeRaw(a.stdout, body)
+	}
+	printComponents(a.stdout, file.Components)
+	return nil
+}
+
+func (a *app) runStyles(ctx context.Context, args []string) error {
+	if len(args) == 0 {
+		return errors.New("styles command required: list")
+	}
+	switch args[0] {
+	case "list":
+		return a.runStylesList(ctx, args[1:])
+	default:
+		return fmt.Errorf("unknown styles command %q", args[0])
+	}
+}
+
+func (a *app) runStylesList(ctx context.Context, args []string) error {
+	fs := flag.NewFlagSet("styles list", flag.ContinueOnError)
+	fs.SetOutput(a.stderr)
+	raw := fs.Bool("raw", false, "print raw JSON")
+	if err := fs.Parse(interspersed(args, nil)); err != nil {
+		return err
+	}
+	if fs.NArg() != 1 {
+		return errors.New("usage: figma-cli styles list URL_OR_KEY [--raw]")
+	}
+	target, err := figmaurl.Parse(fs.Arg(0))
+	if err != nil {
+		return err
+	}
+	client, err := a.client()
+	if err != nil {
+		return err
+	}
+	file, body, err := client.File(ctx, target.FileKey, 1)
+	if err != nil {
+		return err
+	}
+	if *raw {
+		return writeRaw(a.stdout, body)
+	}
+	printStyles(a.stdout, file.Styles)
+	return nil
+}
+
+func (a *app) runVariables(ctx context.Context, args []string) error {
+	if len(args) == 0 {
+		return errors.New("variables command required: list")
+	}
+	switch args[0] {
+	case "list":
+		return a.runVariablesList(ctx, args[1:])
+	default:
+		return fmt.Errorf("unknown variables command %q", args[0])
+	}
+}
+
+func (a *app) runVariablesList(ctx context.Context, args []string) error {
+	fs := flag.NewFlagSet("variables list", flag.ContinueOnError)
+	fs.SetOutput(a.stderr)
+	raw := fs.Bool("raw", false, "print raw JSON")
+	if err := fs.Parse(interspersed(args, nil)); err != nil {
+		return err
+	}
+	if fs.NArg() != 1 {
+		return errors.New("usage: figma-cli variables list URL_OR_KEY [--raw]")
+	}
+	target, err := figmaurl.Parse(fs.Arg(0))
+	if err != nil {
+		return err
+	}
+	client, err := a.client()
+	if err != nil {
+		return err
+	}
+	resp, body, err := client.Variables(ctx, target.FileKey)
+	if err != nil {
+		return err
+	}
+	if *raw {
+		return writeRaw(a.stdout, body)
+	}
+	printVariables(a.stdout, resp)
+	return nil
+}
+
+func printComponents(w io.Writer, components map[string]api.Component) {
+	if len(components) == 0 {
+		fmt.Fprintln(w, "No components")
+		return
+	}
+	keys := sortedKeys(components)
+	fmt.Fprintln(w, "KEY | NAME | REMOTE | DESCRIPTION")
+	for _, k := range keys {
+		c := components[k]
+		key := firstNonEmpty(c.Key, k)
+		fmt.Fprintf(w, "%s | %s | %t | %s\n", key, c.Name, c.Remote, oneLine(c.Description, 80))
+	}
+}
+
+func printStyles(w io.Writer, styles map[string]api.Style) {
+	if len(styles) == 0 {
+		fmt.Fprintln(w, "No styles")
+		return
+	}
+	keys := sortedKeys(styles)
+	fmt.Fprintln(w, "KEY | TYPE | NAME | REMOTE | DESCRIPTION")
+	for _, k := range keys {
+		s := styles[k]
+		key := firstNonEmpty(s.Key, k)
+		fmt.Fprintf(w, "%s | %s | %s | %t | %s\n", key, s.StyleType, s.Name, s.Remote, oneLine(s.Description, 80))
+	}
+}
+
+func printVariables(w io.Writer, resp *api.VariablesResponse) {
+	if len(resp.Meta.Variables) == 0 {
+		fmt.Fprintln(w, "No variables")
+		return
+	}
+	keys := sortedKeys(resp.Meta.Variables)
+	fmt.Fprintln(w, "ID | TYPE | COLLECTION | NAME | SCOPES")
+	for _, k := range keys {
+		v := resp.Meta.Variables[k]
+		id := firstNonEmpty(v.ID, k)
+		collection := collectionName(resp.Meta.VariableCollections, v.VariableCollectionID)
+		fmt.Fprintf(w, "%s | %s | %s | %s | %s\n", id, v.ResolvedType, collection, v.Name, strings.Join(v.Scopes, ","))
+	}
+}
+
+func collectionName(collections map[string]api.VariableCollection, id string) string {
+	if c, ok := collections[id]; ok && c.Name != "" {
+		return c.Name
+	}
+	return id
+}
+
+func sortedKeys[T any](m map[string]T) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func (a *app) runInit(args []string) error {
@@ -339,6 +553,9 @@ func (a *app) client() (*api.Client, error) {
 	if baseURL := strings.TrimRight(os.Getenv("FIGMA_API_BASE_URL"), "/"); baseURL != "" {
 		c.BaseURL = baseURL
 	}
+	if !a.noCache {
+		c.Cache = cache.Store{Dir: cache.DefaultDir(), TTL: a.cacheTTL}
+	}
 	c.Verbose = a.verbose
 	c.VerboseOut = a.stderr
 	return c, nil
@@ -354,13 +571,18 @@ Usage:
   figma-cli node inspect URL_OR_KEY --node NODE_ID [--raw]
   figma-cli image export URL_OR_KEY --node NODE_ID [--format png] [--scale 2] [--out DIR]
   figma-cli comments list URL_OR_KEY [--raw]
+  figma-cli components list URL_OR_KEY [--raw]
+  figma-cli styles list URL_OR_KEY [--raw]
+  figma-cli variables list URL_OR_KEY [--raw]
 
 Authentication:
   FIGMA_TOKEN overrides the OS keyring for one invocation.
   init stores a token in the OS keyring and never echoes it.
 
 Global flags:
-  -v, --verbose   print request diagnostics without token values
+  -v, --verbose         print request diagnostics without token values
+      --no-cache        disable local response cache for this invocation
+      --cache-ttl D     cache TTL duration, default 15m
 `)
 }
 

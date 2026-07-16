@@ -11,9 +11,13 @@
 - 不打开 Figma app 也能读取文件和节点摘要。
 - 导出节点图片 URL，或下载素材到本地。
 - 列出 comments，给 review / 实现提供上下文。
+- 列出本地 components、styles、variables。
+- 对重复读取做有 TTL 的本地缓存。
 - token 存入 OS keyring；CI 或一次性调用可使用 `FIGMA_TOKEN`。
 
 这个 CLI 和 Figma MCP 是互补关系。交互式画布上下文、写回 Figma 画布这类场景更适合 MCP 或浏览器自动化；agent 需要稳定读取、重复查询、下载素材时更适合用这个 CLI。
+
+官方 API 边界、已有工具经验和 v1 非目标见 [docs/CAPABILITY_REVIEW.md](docs/CAPABILITY_REVIEW.md)。
 
 ## 安装
 
@@ -92,10 +96,25 @@ figma-cli image export FILE_KEY --node 1:2 --format png --scale 2 --out ./figma-
 figma-cli comments list FILE_KEY
 ```
 
+列出可复用设计元数据：
+
+```bash
+figma-cli components list FILE_KEY
+figma-cli styles list FILE_KEY
+figma-cli variables list FILE_KEY
+```
+
 agent 需要原始 API 响应时使用 `--raw`：
 
 ```bash
 figma-cli node inspect FILE_KEY --node 1:2 --raw
+```
+
+本地缓存控制：
+
+```bash
+figma-cli file get FILE_KEY --cache-ttl 1h
+figma-cli file get FILE_KEY --no-cache
 ```
 
 ## 输出契约
@@ -103,15 +122,29 @@ figma-cli node inspect FILE_KEY --node 1:2 --raw
 - 默认输出是简洁文本，适合人类阅读，也适合 agent 解析。
 - `--raw` 输出格式化后的 Figma REST API JSON。
 - `--verbose` 输出请求诊断，但不会输出 token。
+- GET JSON 响应默认缓存 15 分钟。
+- `--no-cache` 可关闭单次调用缓存。
+- `--cache-ttl` 支持 Go duration 字符串，比如 `30s`、`15m` 或 `1h`。
 - `FIGMA_API_BASE_URL` 可用于本地测试时覆盖 API host。
 - 大文件内容需要通过 `--depth` 或 `--raw` 显式请求。
 
+## 发布准备
+
+仓库已包含 GoReleaser 配置，可用于 GitHub release archives。Homebrew 发布已写入文档，但在最终仓库名和 tap 名确认前不会启用。
+
+```bash
+go test ./...
+make build
+make mock-verify
+make release-check
+```
+
+见 [docs/RELEASING.md](docs/RELEASING.md)。
+
 ## Roadmap
 
-- components、styles、variables 检查。
 - design token 导出为 CSS / JSON。
-- 按 file key、node ID、version 做本地响应缓存。
-- GoReleaser 和 Homebrew 发布。
+- 仓库名和 tap 名确认后启用 Homebrew cask 发布。
 - Codex / Claude Code skills。
 
 ## 开发
@@ -119,4 +152,5 @@ figma-cli node inspect FILE_KEY --node 1:2 --raw
 ```bash
 make test
 make build
+make mock-verify
 ```

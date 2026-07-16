@@ -28,8 +28,12 @@ The CLI should complement Figma MCP workflows:
 - `figma-cli node inspect URL_OR_KEY --node NODE_ID`
 - `figma-cli image export URL_OR_KEY --node NODE_ID`
 - `figma-cli comments list URL_OR_KEY`
+- `figma-cli components list URL_OR_KEY`
+- `figma-cli styles list URL_OR_KEY`
+- `figma-cli variables list URL_OR_KEY`
 
 ## Testing
 - Unit-test URL parsing and request construction.
 - Use mocked HTTP servers for API behavior.
 - Do not require real Figma credentials in CI.
+- Use `python3 scripts/mock_verify.py` for end-to-end command verification without real credentials.

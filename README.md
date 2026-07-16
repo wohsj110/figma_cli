@@ -117,6 +117,30 @@ figma-cli file get FILE_KEY --cache-ttl 1h
 figma-cli file get FILE_KEY --no-cache
 ```
 
+## Agent Skills
+
+Install the bundled `figma-cli` skill with the open `skills` CLI (auto-detects Claude Code / Codex / Cursor):
+
+```bash
+npx skills add wohsj110/figma_cli
+```
+
+### For LLM agents — copy & paste this to any agent
+
+```text
+Install and verify the figma-cli skill:
+
+1. Run: npx skills add wohsj110/figma_cli --yes
+   (target agents with --agent codex|claude-code; add --global for a user-wide install)
+2. Ensure the CLI binary exists: command -v figma-cli
+   If missing: go install github.com/wohsj110/figma_cli/cmd/figma-cli@latest
+3. Verify credentials: figma-cli me
+   If not configured, follow "Credential Setup" in the installed SKILL.md and ask the
+   user for a Figma personal access token — never guess node ids or print token values.
+```
+
+Skill page on skills.sh (indexing into search/leaderboard grows with installs): https://www.skills.sh/wohsj110/figma_cli/figma-cli
+
 ## Output Contract
 
 - Default output is concise text for humans and agents.
@@ -145,7 +169,7 @@ See [docs/RELEASING.md](docs/RELEASING.md).
 
 - Design token export to CSS / JSON.
 - Homebrew cask publishing after repository/tap names are confirmed.
-- Optional skills for Codex and Claude Code.
+- ~~Optional skills for Codex and Claude Code.~~ Shipped: see Agent Skills above.
 
 ## Development
 

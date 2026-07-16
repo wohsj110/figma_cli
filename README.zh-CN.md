@@ -117,6 +117,30 @@ figma-cli file get FILE_KEY --cache-ttl 1h
 figma-cli file get FILE_KEY --no-cache
 ```
 
+## Agent Skills
+
+用开放的 `skills` CLI 安装内置的 `figma-cli` skill（自动识别 Claude Code / Codex / Cursor）：
+
+```bash
+npx skills add wohsj110/figma_cli
+```
+
+### For LLM——整段复制给任意 agent 即可安装
+
+```text
+Install and verify the figma-cli skill:
+
+1. Run: npx skills add wohsj110/figma_cli --yes
+   (target agents with --agent codex|claude-code; add --global for a user-wide install)
+2. Ensure the CLI binary exists: command -v figma-cli
+   If missing: go install github.com/wohsj110/figma_cli/cmd/figma-cli@latest
+3. Verify credentials: figma-cli me
+   If not configured, follow "Credential Setup" in the installed SKILL.md and ask the
+   user for a Figma personal access token — never guess node ids or print token values.
+```
+
+skills.sh 上的 skill 页面（进入搜索/排行榜靠安装量累积）：https://www.skills.sh/wohsj110/figma_cli/figma-cli
+
 ## 输出契约
 
 - 默认输出是简洁文本，适合人类阅读，也适合 agent 解析。

@@ -1,6 +1,6 @@
 ---
 name: figma-cli
-description: Use when reading Figma files or nodes, exporting node images or assets, listing Figma comments, components, styles, or variables through the figma-cli command line, or setting up Figma token credentials. Token-based reads work headlessly — no Figma app, browser, or MCP session required.
+description: Use when reading Figma files or nodes, exporting node images or assets, listing Figma comments, components, styles, or variables through the figma-cli command line, or setting up Figma token credentials. Token-based reads work headlessly — no Figma app or browser required.
 ---
 
 # Figma CLI Skill
@@ -47,7 +47,6 @@ figma-cli styles list FILE_KEY
 figma-cli variables list FILE_KEY                                   # design tokens
 ```
 
-## When NOT to Use
+## Boundaries
 
-- Interactive canvas context or write-back workflows → use Figma MCP or browser automation instead.
-- This CLI is read-only inspection and asset export by design.
+- This CLI is read-only inspection and asset export by design — it never writes back to Figma.

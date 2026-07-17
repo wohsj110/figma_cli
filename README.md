@@ -15,7 +15,7 @@ It is designed for repeatable inspection and asset export:
 - Cache repeated reads locally with a bounded TTL.
 - Store the Figma token in the OS keyring; `FIGMA_TOKEN` is supported for CI and one-off runs.
 
-This CLI complements Figma MCP workflows. Use MCP or browser automation for interactive canvas context and write-back workflows. Use this CLI when an agent needs stable, token-based reads and reproducible outputs.
+The CLI is read-only by design: it inspects and exports, and never writes back to Figma. Reads are token-based and reproducible, so they work the same in scripts, CI, and headless agent runs.
 
 See [docs/CAPABILITY_REVIEW.md](docs/CAPABILITY_REVIEW.md) for the official API boundary, lessons from existing tooling, and non-goals.
 

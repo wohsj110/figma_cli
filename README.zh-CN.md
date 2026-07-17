@@ -15,7 +15,7 @@
 - 对重复读取做有 TTL 的本地缓存。
 - token 存入 OS keyring；CI 或一次性调用可使用 `FIGMA_TOKEN`。
 
-这个 CLI 和 Figma MCP 是互补关系。交互式画布上下文、写回 Figma 画布这类场景更适合 MCP 或浏览器自动化；agent 需要稳定读取、重复查询、下载素材时更适合用这个 CLI。
+这个 CLI 是刻意只读的：只做检视与导出，永不写回 Figma。读取基于 token、结果可复现——脚本、CI、无头 agent 环境里行为一致。
 
 官方 API 边界、已有工具经验和 v1 非目标见 [docs/CAPABILITY_REVIEW.md](docs/CAPABILITY_REVIEW.md)。
 

@@ -21,10 +21,16 @@ See [docs/CAPABILITY_REVIEW.md](docs/CAPABILITY_REVIEW.md) for the official API 
 
 ## Install
 
-Local development install:
+Homebrew (macOS):
 
 ```bash
-go install ./cmd/figma-cli
+brew install --cask wohsj110/tap/figma-cli
+```
+
+Go install:
+
+```bash
+go install github.com/wohsj110/figma_cli/cmd/figma-cli@latest
 ```
 
 Or build locally:
@@ -133,7 +139,8 @@ Install and verify the figma-cli skill:
 1. Run: npx skills add wohsj110/figma_cli --yes
    (target agents with --agent codex|claude-code; add --global for a user-wide install)
 2. Ensure the CLI binary exists: command -v figma-cli
-   If missing: go install github.com/wohsj110/figma_cli/cmd/figma-cli@latest
+   If missing: brew install --cask wohsj110/tap/figma-cli
+   (no Homebrew: go install github.com/wohsj110/figma_cli/cmd/figma-cli@latest)
 3. Verify credentials: figma-cli me
    If not configured, follow "Credential Setup" in the installed SKILL.md and ask the
    user for a Figma personal access token — never guess node ids or print token values.
@@ -154,7 +161,7 @@ Skill page on skills.sh (indexing into search/leaderboard grows with installs): 
 
 ## Release Readiness
 
-The repository includes GoReleaser configuration for GitHub release archives. Homebrew publishing is documented but intentionally not enabled until the final repository and tap names are confirmed.
+GoReleaser builds the GitHub release archives and publishes the `figma-cli` cask to `wohsj110/homebrew-tap`.
 
 ```bash
 go test ./...
@@ -168,7 +175,7 @@ See [docs/RELEASING.md](docs/RELEASING.md).
 ## Roadmap
 
 - Design token export to CSS / JSON.
-- Homebrew cask publishing after repository/tap names are confirmed.
+- ~~Homebrew cask publishing after repository/tap names are confirmed.~~ Shipped: `brew install --cask wohsj110/tap/figma-cli`.
 - ~~Optional skills for Codex and Claude Code.~~ Shipped: see Agent Skills above.
 
 ## Development

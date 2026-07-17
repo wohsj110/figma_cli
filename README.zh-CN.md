@@ -21,10 +21,16 @@
 
 ## 安装
 
-本地开发安装：
+Homebrew（macOS）：
 
 ```bash
-go install ./cmd/figma-cli
+brew install --cask wohsj110/tap/figma-cli
+```
+
+Go 安装：
+
+```bash
+go install github.com/wohsj110/figma_cli/cmd/figma-cli@latest
 ```
 
 或本地编译：
@@ -133,7 +139,8 @@ Install and verify the figma-cli skill:
 1. Run: npx skills add wohsj110/figma_cli --yes
    (target agents with --agent codex|claude-code; add --global for a user-wide install)
 2. Ensure the CLI binary exists: command -v figma-cli
-   If missing: go install github.com/wohsj110/figma_cli/cmd/figma-cli@latest
+   If missing: brew install --cask wohsj110/tap/figma-cli
+   (no Homebrew: go install github.com/wohsj110/figma_cli/cmd/figma-cli@latest)
 3. Verify credentials: figma-cli me
    If not configured, follow "Credential Setup" in the installed SKILL.md and ask the
    user for a Figma personal access token — never guess node ids or print token values.
@@ -154,7 +161,7 @@ skills.sh 上的 skill 页面（进入搜索/排行榜靠安装量累积）：ht
 
 ## 发布准备
 
-仓库已包含 GoReleaser 配置，可用于 GitHub release archives。Homebrew 发布已写入文档，但在最终仓库名和 tap 名确认前不会启用。
+GoReleaser 构建 GitHub release archives，并把 `figma-cli` cask 发布到 `wohsj110/homebrew-tap`。
 
 ```bash
 go test ./...
@@ -168,7 +175,7 @@ make release-check
 ## Roadmap
 
 - design token 导出为 CSS / JSON。
-- 仓库名和 tap 名确认后启用 Homebrew cask 发布。
+- ~~仓库名和 tap 名确认后启用 Homebrew cask 发布。~~ 已交付：`brew install --cask wohsj110/tap/figma-cli`。
 - Codex / Claude Code skills。
 
 ## 开发

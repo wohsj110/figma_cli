@@ -1,6 +1,6 @@
 # Releasing
 
-The first release target is a GitHub release with GoReleaser-built binaries. Homebrew can be enabled by adding a tap repository after the GitHub repository name is final.
+Releases ship GoReleaser-built binaries on GitHub plus a Homebrew cask published to `wohsj110/homebrew-tap`.
 
 ## Preflight
 
@@ -16,12 +16,16 @@ go run github.com/goreleaser/goreleaser/v2@latest check
 ```bash
 git tag v0.1.0
 git push origin v0.1.0
-GITHUB_TOKEN="$(gh auth token)" go run github.com/goreleaser/goreleaser/v2@latest release --clean
+GITHUB_TOKEN="$(gh auth token)" HOMEBREW_TAP_GITHUB_TOKEN="$(gh auth token)" go run github.com/goreleaser/goreleaser/v2@latest release --clean
 ```
 
 ## Homebrew
 
-Homebrew cask publishing is intentionally not enabled until the repository and tap names are confirmed. After that, add a `homebrew_casks` section to `.goreleaser.yml`.
+The `homebrew_casks` section in `.goreleaser.yml` publishes the `figma-cli` cask to `wohsj110/homebrew-tap` on every release. Export `HOMEBREW_TAP_GITHUB_TOKEN` (a token with push access to the tap repo) before running `goreleaser release`. Users install with:
+
+```bash
+brew install --cask wohsj110/tap/figma-cli
+```
 
 ## Safety
 

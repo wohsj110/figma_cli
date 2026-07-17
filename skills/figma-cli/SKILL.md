@@ -10,7 +10,7 @@ Use this skill when an agent needs stable, reproducible reads from the Figma RES
 ## CLI Setup
 
 - Before using Figma commands, check whether `figma-cli` is available with `command -v figma-cli`.
-- If missing, install with `go install github.com/wohsj110/figma_cli/cmd/figma-cli@latest` (requires Go ≥ 1.26), or clone the repo and run `make build`.
+- If missing, install with `brew install --cask wohsj110/tap/figma-cli`; without Homebrew, `go install github.com/wohsj110/figma_cli/cmd/figma-cli@latest` (requires Go ≥ 1.26).
 
 ## Credential Setup
 

@@ -41,3 +41,31 @@ checksum:
 
 release:
   replace_existing_artifacts: true
+
+homebrew_casks:
+  - name: figma-cli
+    ids:
+      - figma-cli
+    skip_upload: false
+    url:
+      template: "https://github.com/wohsj110/figma_cli/releases/download/v{{ .Version }}/{{ .ArtifactName }}"
+    repository:
+      owner: wohsj110
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/wohsj110/figma_cli
+    description: "Agent-friendly Figma REST API command-line toolkit"
+    binaries:
+      - figma-cli
+    hooks:
+      post:
+        install: |
+          system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/figma-cli"]
+    caveats: |
+      figma-cli has been installed.
+
+      To configure, store your Figma personal access token in the OS keyring:
+        printf %s "$FIGMA_TOKEN" | figma-cli init --token-stdin
+
+      Create a token at: https://www.figma.com/developers/api#access-tokens

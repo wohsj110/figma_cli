@@ -5,13 +5,41 @@ before:
     - go test ./...
 
 builds:
-  - id: figma-cli
+  - id: figma-cli-darwin
     main: ./cmd/figma-cli
     binary: figma-cli
+    flags:
+      - -tags=keyring_no1password,keyring_nopassage
+    env:
+      - CGO_ENABLED=1
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    overrides:
+      - goos: darwin
+        goarch: amd64
+        goamd64: v1
+        env:
+          - CGO_ENABLED=1
+          - "CC=xcrun clang -arch x86_64"
+      - goos: darwin
+        goarch: arm64
+        goarm64: v8.0
+        env:
+          - CGO_ENABLED=1
+          - "CC=xcrun clang -arch arm64"
+    ldflags:
+      - -s -w
+  - id: figma-cli-unix-win
+    main: ./cmd/figma-cli
+    binary: figma-cli
+    flags:
+      - -tags=keyring_no1password,keyring_nopassage
     env:
       - CGO_ENABLED=0
     goos:
-      - darwin
       - linux
       - windows
     goarch:
@@ -23,7 +51,8 @@ builds:
 archives:
   - id: figma-cli
     ids:
-      - figma-cli
+      - figma-cli-darwin
+      - figma-cli-unix-win
     formats:
       - tar.gz
     format_overrides:
